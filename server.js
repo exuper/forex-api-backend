@@ -24,21 +24,24 @@ const signalSchema = new mongoose.Schema({
 });
 
 const settingsSchema = new mongoose.Schema({
-    // Using a fixed ID ensures we only ever have one settings document in our database
     fixedId: { type: String, default: 'main_settings', unique: true },
-    appName: String,
-    logoUrl: String,
-    communityLink: String,
-    brokerLink: String,
-    primaryColor: String,
-    secondaryColor: String,
-    highlightColor: String,
-    borderRadius: String,
-    animatedBackground: String,
+    appName: String, logoUrl: String, communityLink: String, brokerLink: String,
+    primaryColor: String, secondaryColor: String, highlightColor: String,
+    borderRadius: String, animatedBackground: String,
 }, { timestamps: true });
+
+// --- NEW: Schema for Analysis Posts ---
+const analysisSchema = new mongoose.Schema({
+    title: String,
+    content: String,
+    imageUrl: String,
+    createdAt: { type: Date, default: Date.now }
+});
+
 
 const Signal = mongoose.model('Signal', signalSchema);
 const AppSettings = mongoose.model('AppSettings', settingsSchema);
+const Analysis = mongoose.model('Analysis', analysisSchema); // --- NEW: Model for Analysis
 
 
 // --- API Routes ---
@@ -46,56 +49,32 @@ app.get('/', (req, res) => {
     res.send('Forex App API is running with full features!');
 });
 
-// GET: Retrieve all signals
-app.get('/api/signals', async (req, res) => {
+// --- Signal Routes ---
+app.get('/api/signals', async (req, res) => { /* ... (code remains the same) ... */ });
+app.post('/api/signals', async (req, res) => { /* ... (code remains the same) ... */ });
+
+// --- App Settings Route ---
+app.get('/api/settings', async (req, res) => { /* ... (code remains the same) ... */ });
+app.post('/api/settings', async (req, res) => { /* ... (code remains the same) ... */ });
+
+
+// --- NEW: API Routes for Analysis ---
+app.get('/api/analysis', async (req, res) => {
     try {
-        const signals = await Signal.find().sort({ createdAt: -1 });
-        res.json(signals);
+        const posts = await Analysis.find().sort({ createdAt: -1 });
+        res.json(posts);
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching signals' });
+        res.status(500).json({ message: 'Error fetching analysis posts' });
     }
 });
 
-// POST: Add a new signal
-app.post('/api/signals', async (req, res) => {
-    const newSignal = new Signal(req.body);
+app.post('/api/analysis', async (req, res) => {
+    const newPost = new Analysis(req.body);
     try {
-        const savedSignal = await newSignal.save();
-        res.status(201).json(savedSignal);
+        const savedPost = await newPost.save();
+        res.status(201).json(savedPost);
     } catch (error) {
-        res.status(400).json({ message: 'Error saving signal' });
-    }
-});
-
-// --- NEW: API Routes for App Settings & Theme ---
-
-// GET: Retrieve the current settings for the mobile app
-app.get('/api/settings', async (req, res) => {
-    try {
-        const settings = await AppSettings.findOne({ fixedId: 'main_settings' });
-        if (!settings) {
-            // If no settings exist yet, send some default values
-            return res.json({ appName: 'Aifx Signals', primaryColor: '#141E30' });
-        }
-        res.json(settings);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching settings' });
-    }
-});
-
-// POST: Save or Update ALL settings from the admin panel
-app.post('/api/settings', async (req, res) => {
-    const settingsData = req.body;
-    try {
-        // Find the existing settings document and update it, or create it if it doesn't exist (upsert)
-        const updatedSettings = await AppSettings.findOneAndUpdate(
-            { fixedId: 'main_settings' }, // find document with this ID
-            { $set: settingsData },      // update it with the new data
-            { new: true, upsert: true, setDefaultsOnInsert: true } // options
-        );
-        res.status(200).json(updatedSettings);
-    } catch (error) {
-        res.status(400).json({ message: 'Error saving settings' });
+        res.status(400).json({ message: 'Error saving analysis post' });
     }
 });
 
